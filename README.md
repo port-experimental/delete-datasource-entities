@@ -1,7 +1,5 @@
 # delete-datasource-entities
 
-# 🧹 Port Entity Cleanup Tool
-
 This Python script helps you **delete all entities from all blueprints** in [Port](https://www.getport.io) that were ingested from a specific **data source** (e.g., `jira`, a decommissioned Kubernetes cluster, etc).  
 
 It:
