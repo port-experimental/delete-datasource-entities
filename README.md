@@ -52,7 +52,7 @@ This tool ensures those orphaned entities are removed cleanly and efficiently.
 
 6. **Run the script**:
    ```bash
-   python delete_entities.py
+   python main.py
    ```
 
 ---
