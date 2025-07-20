@@ -25,8 +25,7 @@ This script provides a safe and automated way to clean up **all entities across 
 
 A common use case is when an integration is decommissioned but its entities remain in Port. For example:
 - A **Kubernetes cluster** was deleted, but its services and workloads still exist in Port.
-- A **Jira / GitHub ** were disconnected, but entities are still in catalog.
-- 
+- A ** Jira / GitHub ** were disconnected, but entities are still in catalog.
 
 This tool ensures those orphaned entities are removed cleanly and efficiently.
 
