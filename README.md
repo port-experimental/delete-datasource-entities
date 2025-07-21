@@ -63,7 +63,7 @@ You can configure the following variables at the top of the script:
 |------------------|-----------------------------------------------------------------------------|
 | `PORT_CLIENT_ID` | Your Port client ID (via env or inline).                                   |
 | `PORT_CLIENT_SECRET` | Your Port client secret (via env or inline).                          |
-| `DATASOURCE_NAME`| The `$datasource` value to filter entities by.                             |
+| `INTEGRATION_ID`| The integration installation id.                             |
 | `DRY_RUN`        | `True` to preview deletions, `False` to delete for real.                   |
 | `PORT_API_BASE`  | (Optional) Base URL for Port’s API. Default is `https://api.port.io`.      |
 
