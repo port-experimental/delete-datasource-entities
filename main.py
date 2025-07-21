@@ -5,9 +5,9 @@ from collections import defaultdict
 # ======== Configuration ========
 CLIENT_ID = os.getenv("PORT_CLIENT_ID") or "your-client-id"
 CLIENT_SECRET = os.getenv("PORT_CLIENT_SECRET") or "your-client-secret"
-INTEGRATION_ID = "76857005"
+INTEGRATION_ID = "<instert integration id" # To get all running integrations - https://docs.port.io/api-reference/get-all-integrations
 DRY_RUN = False  # Set to False to actually delete entities
-DELETE_INTEGRATION = True  # Set to True to delete the integration after entities are deleted
+DELETE_INTEGRATION = False  # Set to True to delete the integration after entities are deleted
 PORT_API_BASE = "https://api.port.io/v1"
 BATCH_SIZE = 100
 # ===============================
