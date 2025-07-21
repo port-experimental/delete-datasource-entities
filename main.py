@@ -5,9 +5,9 @@ from collections import defaultdict
 # ======== Configuration ========
 CLIENT_ID = os.getenv("PORT_CLIENT_ID") or "your-client-id"
 CLIENT_SECRET = os.getenv("PORT_CLIENT_SECRET") or "your-client-secret"
-DATASOURCE_NAME = "jira-server"  # Also used as the integration ID
-DRY_RUN = True  # Set to False to actually delete entities
-DELETE_INTEGRATION = False  # Set to True to delete the integration after entities are deleted
+INTEGRATION_ID = "76857005"
+DRY_RUN = False  # Set to False to actually delete entities
+DELETE_INTEGRATION = True  # Set to True to delete the integration after entities are deleted
 PORT_API_BASE = "https://api.port.io/v1"
 BATCH_SIZE = 100
 # ===============================
@@ -30,7 +30,7 @@ def get_access_token(client_id, client_secret):
     return token
 
 def search_entities(datasource_name, token):
-    url = f"{PORT_API_BASE}/entities/search?include=identifier,blueprint"
+    url = f"{PORT_API_BASE}/entities/search?include=identifier&include=blueprint"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {token}"
@@ -77,25 +77,21 @@ def bulk_delete(blueprint, identifiers, token):
     return response.json()
 
 def delete_integration(integration_id, token):
-    url = f"{PORT_API_BASE}/integrations/{integration_id}"
+    url = f"{PORT_API_BASE}/integration/{integration_id}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/json"
     }
     response = requests.delete(url, headers=headers)
-    if response.status_code == 204:
-        print(f"✅ Integration '{integration_id}' deleted successfully.\n")
-    else:
-        print(f"⚠️ Failed to delete integration '{integration_id}'. Status: {response.status_code}")
-        print(response.text)
+    return response.json()
 
 def main():
     print("Authenticating with Port...")
     token = get_access_token(CLIENT_ID, CLIENT_SECRET)
     print("Access token acquired.\n")
 
-    print(f"Searching for entities with datasource containing '{DATASOURCE_NAME}'...")
-    entities = search_entities(DATASOURCE_NAME, token)
+    print(f"Searching for entities with datasource containing '{INTEGRATION_ID}'...")
+    entities = search_entities(INTEGRATION_ID, token)
     print(f"Found {len(entities)} entities.\n")
 
     grouped_entities = group_by_blueprint(entities)
@@ -110,12 +106,14 @@ def main():
         else:
             for batch in chunked(ids, BATCH_SIZE):
                 print(f"Deleting batch of {len(batch)} entities from blueprint '{blueprint}'...")
-                result = bulk_delete(blueprint, batch, token)
-                print(f"Result: {result}")
+                bulk_result = bulk_delete(blueprint, batch, token)
+                print(f"Result: {bulk_result}")
 
     if DELETE_INTEGRATION:
-        print(f"Attempting to delete integration: {DATASOURCE_NAME}")
-        delete_integration(DATASOURCE_NAME, token)
+        print(f"Attempting to delete integration: {INTEGRATION_ID}")
+        integration_deletion_result = delete_integration(INTEGRATION_ID, token)
+        print(f"Result: {integration_deletion_result}")
+
 
 if __name__ == "__main__":
     main()
