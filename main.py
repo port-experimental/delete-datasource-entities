@@ -1,27 +1,15 @@
 import requests
 import os
+import argparse
 from collections import defaultdict
 
-# ======== Configuration ========
-CLIENT_ID = os.getenv("PORT_CLIENT_ID") or "your-client-id"
-CLIENT_SECRET = os.getenv("PORT_CLIENT_SECRET") or "your-client-secret"
-INTEGRATION_ID = "<instert integration id" # To get all running integrations - https://docs.port.io/api-reference/get-all-integrations
-DRY_RUN = False  # Set to False to actually delete entities
-DELETE_INTEGRATION = False  # Set to True to delete the integration after entities are deleted
 PORT_API_BASE = "https://api.port.io/v1"
 BATCH_SIZE = 100
-# ===============================
 
 def get_access_token(client_id, client_secret):
     url = f"{PORT_API_BASE}/auth/access_token"
-    payload = {
-        "clientId": client_id,
-        "clientSecret": client_secret
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
+    payload = {"clientId": client_id, "clientSecret": client_secret}
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
     response = requests.post(url, json=payload, headers=headers)
     response.raise_for_status()
     token = response.json().get("accessToken")
@@ -31,18 +19,11 @@ def get_access_token(client_id, client_secret):
 
 def search_entities(datasource_name, token):
     url = f"{PORT_API_BASE}/entities/search?include=identifier&include=blueprint"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {token}"
-    }
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
     payload = {
         "combinator": "and",
         "rules": [
-            {
-                "property": "$datasource",
-                "operator": "contains",
-                "value": datasource_name
-            }
+            {"property": "$datasource", "operator": "contains", "value": datasource_name}
         ]
     }
     response = requests.post(url, json=payload, headers=headers)
@@ -64,34 +45,35 @@ def chunked(iterable, size):
 
 def bulk_delete(blueprint, identifiers, token):
     url = f"{PORT_API_BASE}/blueprints/{blueprint}/bulk/entities"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer {token}"
-    }
-    payload = {
-        "entities": identifiers
-    }
+    headers = {"Content-Type": "application/json", "Accept": "application/json", "Authorization": f"Bearer {token}"}
+    payload = {"entities": identifiers}
     response = requests.delete(url, json=payload, headers=headers)
     response.raise_for_status()
     return response.json()
 
 def delete_integration(integration_id, token):
     url = f"{PORT_API_BASE}/integration/{integration_id}"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
     response = requests.delete(url, headers=headers)
+    response.raise_for_status()
     return response.json()
 
 def main():
+    parser = argparse.ArgumentParser(description="Delete Port entities by integration ID.")
+    parser.add_argument("--client-id", default=os.getenv("PORT_CLIENT_ID"), help="Port Client ID")
+    parser.add_argument("--client-secret", default=os.getenv("PORT_CLIENT_SECRET"), help="Port Client Secret")
+    parser.add_argument("--integration-id", required=True, help="Integration ID (data source identifier)")
+    parser.add_argument("--dry-run", action="store_true", help="Do not actually delete entities")
+    parser.add_argument("--delete-integration", action="store_true", help="Delete integration after deleting entities")
+
+    args = parser.parse_args()
+
     print("Authenticating with Port...")
-    token = get_access_token(CLIENT_ID, CLIENT_SECRET)
+    token = get_access_token(args.client_id, args.client_secret)
     print("Access token acquired.\n")
 
-    print(f"Searching for entities with datasource containing '{INTEGRATION_ID}'...")
-    entities = search_entities(INTEGRATION_ID, token)
+    print(f"Searching for entities with datasource containing '{args.integration_id}'...")
+    entities = search_entities(args.integration_id, token)
     print(f"Found {len(entities)} entities.\n")
 
     grouped_entities = group_by_blueprint(entities)
@@ -101,7 +83,7 @@ def main():
         print(f"Number of entities to be deleted: {len(ids)}")
         print(f"Entities ids: {ids}\n")
 
-        if DRY_RUN:
+        if args.dry_run:
             print("Dry run enabled — no deletion performed.\n")
         else:
             for batch in chunked(ids, BATCH_SIZE):
@@ -109,11 +91,10 @@ def main():
                 bulk_result = bulk_delete(blueprint, batch, token)
                 print(f"Result: {bulk_result}")
 
-    if DELETE_INTEGRATION:
-        print(f"Attempting to delete integration: {INTEGRATION_ID}")
-        integration_deletion_result = delete_integration(INTEGRATION_ID, token)
+    if args.delete_integration:
+        print(f"Attempting to delete integration: {args.integration_id}")
+        integration_deletion_result = delete_integration(args.integration_id, token)
         print(f"Result: {integration_deletion_result}")
-
 
 if __name__ == "__main__":
     main()
